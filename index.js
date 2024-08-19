@@ -58,11 +58,11 @@ async function run() {
     //   })
     //   res.send({token})
     // })
-    app.post('/jwt', async (req, res) => {
-      const user = req.body;
-      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
-      res.send({ token });
-    })
+    // app.post('/jwt', async (req, res) => {
+    //   const user = req.body;
+    //   const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+    //   res.send({ token });
+    // })
 
       // middlewares 
       // const verifyToken = (req, res, next) => {
@@ -158,40 +158,76 @@ async function run() {
       })
 
     
-    //user
-    app.get('/users',verifyToken,verifyAdmin,async(req,res) =>{
+    
+
+  
+
+  
+
+ 
+
+     // save a user data in db
+     app.put('/user', async (req, res) => {
+      const user = req.body
+      const query = { email: user?.email }
+      // check if user already exists in db
+      const isExist = await userCollection.findOne(query)
+      if (isExist) {
+        if (user.status === 'Requested') {
+          // if existing user try to change his role
+          const result = await userCollection.updateOne(query, {
+            $set: { status: user?.status },
+          })
+          return res.send(result)
+        } else {
+          // if existing user login again
+          return res.send(isExist)
+        }
+      }
+
+      // save user for the first time
+      const options = { upsert: true }
+      const updateDoc = {
+        $set: {
+          ...user,
+          timestamp: Date.now(),
+        },
+      }
+      const result = await userCollection.updateOne(query, updateDoc, options)
+      res.send(result)
+    })
+
+    //update a user role 
+    app.patch('/users/update/:email', async (req,res) =>{
+      const email = req.params.email
+      const user = req.body 
+      const query = {email}
+      const updateDoc = {
+        $set:{...user, Timestamp: Date.now()},
+      } 
+      const result =await userCollection.updateOne(query,updateDoc)
+      res.send(result)
+    })
+
+
+    //get a user data in db
+    app.get('/user/:email',async(req,res)=>{
+      const email = req.params.email 
+      const result = await userCollection.findOne({email})
+      res.send(result)
+    })
+
+    //get users data from mongodb
+    app.get('/users',async(req,res) =>{
       //  console.log(req.headers);
       // console.log("hello")
       const result = await userCollection.find().toArray();
       res.send(result);
     })
 
-    app.get('/users/admin/:email',verifyToken,async(req,res)=>{
-      const email = req.params.email;
-      if(email !== req.decoded?.email){
-        return res.status(403).send({message:'unauthorized access'})
-      }
-      const query = {email:email};
-      const user = await userCollection.findOne(query);
-      let admin = false;
-      if(user){
-        admin = user?.role === 'admin';
-      }
-      res.send({admin})
-    })
+    
 
-  
 
-    app.post('/users',async(req,res) =>{
-        const user = req.body;
-        const query = {email: user.email}
-        const existingUser = await userCollection.findOne(query);
-        if(existingUser){
-          return res.send({ message:'user already exists',insertedId:null})
-        }
-        const result = await userCollection.insertOne(user);
-        res.send(result)
-    })
 
     app.delete('/users/:id',async (req,res) => {
       const id = req.params.id;
@@ -249,7 +285,7 @@ async function run() {
     })
 
 
-    app.delete('/contest/:id',verifyToken,verifyAdmin, async(req,res)=>{
+    app.delete('/contest/:id', async(req,res)=>{
       const id = req.params.id;
       const query = {_id:new ObjectId(id)}
       const result = await contestCollection.deleteOne(query);
@@ -284,11 +320,11 @@ async function run() {
       })
     });
 
-    app.get('/payments/:email', verifyToken, async (req, res) => {
+    app.get('/payments/:email',async (req, res) => {
       const query = { email: req.params.email }
-      if (req.params.email !== req.decoded?.email) {
-        return res.status(403).send({ message:'forbidden access'});
-      }
+      // if (req.params.email !== req.decoded?.email) {
+      //   return res.status(403).send({ message:'forbidden access'});
+      // }
       const result = await paymentCollection.find(query).toArray();
       res.send(result);
     })
@@ -307,16 +343,10 @@ async function run() {
 run().catch(console.dir);
 
 
-
-
-
-
-
-
 app.get('/', (req,res) =>{
     res.send('movie is running')
 })
 
 app.listen(port,()=>{
-    //console.log(`Movie Server is running on port ${port}`)
+    console.log(`Movie Server is running on port ${port}`)
 })
