@@ -135,6 +135,21 @@ async function run() {
         res.send(result)
       })
 
+      //updateStatus
+      app.put(`/contest/:id`,async(req,res) =>{
+        const id = req.params.id;
+        const filter = {_id:new ObjectId(id)}
+        const options = {upsert:true};
+        const updatedStudy = req.body;
+        const update = {
+            $set:{
+                 status:updatedStudy.status
+            }
+        }
+        const result = await contestCollection.updateOne(filter,update,options);
+        res.send(result)
+    })
+
       //all contests
 
       app.get('/allContests',async(req,res) =>{
@@ -251,38 +266,38 @@ async function run() {
 
 
      //update
-     app.put(`/submited/:id`,async(req,res) =>{
-      const id = req.params.id;
-      const filter = {_id:new ObjectId(id)}
-      const options = {upsert:true};
-      const updatedContest = req.body;
-      const update = {
-          $set:{
-               title:updatedContest.title,
-               marks:updatedContest.marks,
-               date:updatedContest.date,
-               assignment:updatedContest.assignment,
-               photo:updatedContest.photo,
-               pdf:updatedContest.pdf,
-               description:updatedContest.description
-          }
-      }
-      const result = await submitedCollection.updateOne(filter,update,options);
-      res.send(result)
-  })
+  //    app.put(`/submited/:id`,async(req,res) =>{
+  //     const id = req.params.id;
+  //     const filter = {_id:new ObjectId(id)}
+  //     const options = {upsert:true};
+  //     const updatedContest = req.body;
+  //     const update = {
+  //         $set:{
+  //              title:updatedContest.title,
+  //              marks:updatedContest.marks,
+  //              date:updatedContest.date,
+  //              assignment:updatedContest.assignment,
+  //              photo:updatedContest.photo,
+  //              pdf:updatedContest.pdf,
+  //              description:updatedContest.description
+  //         }
+  //     }
+  //     const result = await submitedCollection.updateOne(filter,update,options);
+  //     res.send(result)
+  // })
 
-     app.post('/submited',async(req,res) =>{
-      const submit = req.body;
-      console.log('submit ' , submit)
-      const submitResult = await submitedCollection.insertOne(submit)
-      res.send(submitResult)
-    })
+  //    app.post('/submited',async(req,res) =>{
+  //     const submit = req.body;
+  //     console.log('submit ' , submit)
+  //     const submitResult = await submitedCollection.insertOne(submit)
+  //     res.send(submitResult)
+  //   })
 
-    app.get('/submited',async(req,res)=>{
-      const result = await submitedCollection.find().toArray();
-      //console.log(result)
-      res.send(result);
-    })
+  //   app.get('/submited',async(req,res)=>{
+  //     const result = await submitedCollection.find().toArray();
+  //     //console.log(result)
+  //     res.send(result);
+  //   })
 
 
     app.delete('/contest/:id', async(req,res)=>{
